@@ -21,7 +21,7 @@ transition driven by a **sensor reading, never a wall-clock timer** — and a se
 
 ## 🎥 Demo
 
-https://github.com/user-attachments/assets/be3cb2df-9a5e-497f-a0cc-73b79e446c77
+https://github.com/user-attachments/assets/a790a97a-027d-4470-8eb9-7aaf580d58a7
 
 *(≈40 s, also included as [`demo.mp4`](demo.mp4).)* The video is **produced by running the submitted
 code** (`python render_demo.py`): cold-open baseline drop → tactile slip recovery (margin trace →
