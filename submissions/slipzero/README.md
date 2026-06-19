@@ -25,7 +25,7 @@ transition driven by a **sensor reading, never a wall-clock timer** — and a se
 
 > **▶ Video:** _paste the GitHub attachment URL of `demo.mp4` here_ — the same file is included in this folder (`demo.mp4`).
 
-The ~1-minute video is **produced by running the submitted code** (`python render_demo.py`): cold-open
+The ≈40-second video is **produced by running the submitted code** (`python render_demo.py`): cold-open
 baseline drop → tactile slip recovery → grasp/uncap/transfer/seal → in-hand reorientation → an
 audited-robustness card whose numbers are read straight from `metrics.csv`.
 
