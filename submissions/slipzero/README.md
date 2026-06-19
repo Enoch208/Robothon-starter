@@ -11,6 +11,10 @@ A five-finger hand grasps a sealed sample vial, **recovers from incipient slip**
 transition driven by a **sensor reading, never a wall-clock timer** — and a seeded N-trial evaluation
 **proves** the robustness with numbers any judge can reproduce in one command.
 
+<br/>
+
+<img src="hero.png" alt="LEAP hand grasping a sample vial on the SlipZero bench" width="680"/>
+
 </div>
 
 ---

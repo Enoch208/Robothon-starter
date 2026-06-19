@@ -29,11 +29,22 @@ DIM = (150, 165, 180)
 INK = (9, 13, 21)
 
 
+_FONT_FALLBACKS = [
+    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+    "/System/Library/Fonts/Supplemental/Arial.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/Library/Fonts/Arial.ttf",
+]
+
+
 def _font(path, size):
-    try:
-        return ImageFont.truetype(path, size)
-    except OSError:
-        return ImageFont.truetype(_FONT, size)
+    for candidate in [path, *_FONT_FALLBACKS]:
+        try:
+            return ImageFont.truetype(candidate, size)
+        except OSError:
+            continue
+    return ImageFont.load_default(size)
 
 
 def _fonts():
