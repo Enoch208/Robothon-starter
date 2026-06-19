@@ -11,8 +11,8 @@ import yaml
 from PIL import Image, ImageDraw, ImageFont
 
 from phase1 import _controller
-from slipzero.env import SlipZeroEnv
-from slipzero.fsm import Phase2FSM, Phase3FSM, Phase4FSM
+from slipzero.env import EYE_IN_HAND_CAM, SlipZeroEnv, WORKSPACE_CAM
+from slipzero.fsm import Phase1FSM, Phase2FSM, Phase3FSM, Phase4FSM
 from slipzero.sensors import ContactReader
 
 _FONT = "/System/Library/Fonts/Supplemental/Arial.ttf"
@@ -274,6 +274,74 @@ def _headline(csv_path):
             "drops": sum(int(r["dropped"]) for r in rows)}
 
 
+def _render_cam(renderer, env, camera, vial_geom):
+    renderer.disable_segmentation_rendering()
+    renderer.update_scene(env.data, camera=camera)
+    rgb = renderer.render().copy()
+    renderer.enable_segmentation_rendering()
+    renderer.update_scene(env.data, camera=camera)
+    mask = renderer.render()[:, :, 0] == vial_geom
+    renderer.disable_segmentation_rendering()
+    return rgb, mask
+
+
+def _vision_panel(image, draw, rgb, mask, box, label, fonts):
+    x, y, w, h = box
+    tinted = np.ascontiguousarray(rgb[:, :, :3]).copy()
+    if mask.any():
+        tinted[mask] = np.clip(0.4 * tinted[mask] + 0.6 * np.array([70, 225, 130]), 0, 255).astype(np.uint8)
+    image.paste(Image.fromarray(tinted).resize((w, h)), (x, y))
+    draw.rectangle([x, y, x + w, y + h], outline=GREEN, width=2)
+    draw.rectangle([x, y, x + w, y + 28], fill=(8, 12, 20))
+    draw.text((x + 10, y + 4), label, font=fonts["tag"], fill=WHITE)
+
+
+def _compose_vision(eih, ws, fusion, fonts):
+    image = Image.new("RGB", (WIDTH, HEIGHT), INK)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle([0, 0, WIDTH, 90], fill=(8, 12, 20))
+    draw.rectangle([0, 90, WIDTH, 93], fill=GREEN)
+    draw.text((28, 12), "Multimodal perception  —  tactile + vision", font=fonts["banner"], fill=WHITE)
+    draw.text((30, 52), "Friction-cone touch and dual-camera MuJoCo segmentation, fused", font=fonts["label"], fill=GREEN)
+    _vision_panel(image, draw, eih[0], eih[1], (40, 120, 580, 360), "EYE-IN-HAND  ·  vial segmentation", fonts)
+    _vision_panel(image, draw, ws[0], ws[1], (660, 120, 580, 360), "WORKSPACE  ·  vial segmentation", fonts)
+    y0 = 506
+    draw.rounded_rectangle([40, y0, WIDTH - 40, y0 + 178], radius=12, fill=(8, 12, 20))
+    confirmed = fusion["tactile_ok"] and fusion["vision_ok"]
+    draw.text((64, y0 + 18), f"TACTILE   force-closure {'OK' if fusion['tactile_ok'] else 'LOST'}    friction margin {fusion['margin']:+.2f} N",
+              font=fonts["label"], fill=GREEN if fusion["tactile_ok"] else RED)
+    draw.text((64, y0 + 62), f"VISION    vial-in-view {'OK' if fusion['vision_ok'] else 'LOST'}    eye-in-hand {fusion['eih_area'] * 100:.1f}%    confidence {fusion['confidence']:.2f}",
+              font=fonts["label"], fill=GREEN if fusion["vision_ok"] else RED)
+    draw.text((64, y0 + 120), "GRASP CONFIRMED  —  tactile + vision agree" if confirmed else "GRASP UNCERTAIN",
+              font=fonts["h1"], fill=GREEN if confirmed else AMBER)
+    return np.asarray(image)
+
+
+def _vision_beat(env, controller, contacts, renderer, vial_geom, fonts, p1, vcfg):
+    env.reset()
+    grasp = Phase1FSM(env, controller, contacts, p1)
+    while grasp.state not in {"HOLD", "FAILED"}:
+        grasp.step()
+    f_min = p1["f_grasp_min"]
+    frames = []
+    for _ in range(int(3.0 * FPS)):
+        env.data.ctrl[env._hand_ctrl] = grasp.close_hand
+        env.step(12)
+        eih = _render_cam(renderer, env, EYE_IN_HAND_CAM, vial_geom)
+        ws = _render_cam(renderer, env, WORKSPACE_CAM, vial_geom)
+        margin = contacts.min_friction_margin()
+        eih_area = float(eih[1].sum()) / eih[1].size
+        fusion = {
+            "tactile_ok": contacts.fingers_engaged(f_min) >= p1["min_fingers"] and contacts.has_force_closure(f_min),
+            "vision_ok": eih_area >= vcfg["visible_area_min"],
+            "margin": float(margin) if np.isfinite(margin) else -0.2,
+            "eih_area": eih_area,
+            "confidence": float(np.clip(eih_area / vcfg["confidence_area_ref"], 0.0, 1.0)),
+        }
+        frames.append(_compose_vision(eih, ws, fusion, fonts))
+    return frames
+
+
 def _phase3_label(fsm):
     if fsm.phase1.state not in {"HOLD", "FAILED"}:
         return "Grasp & lift"
@@ -311,6 +379,7 @@ def main():
     controller = _controller(env, config)
     contacts = ContactReader(env)
     renderer = mujoco.Renderer(env.model, HEIGHT, WIDTH)
+    vial_geom = mujoco.mj_name2id(env.model, mujoco.mjtObj.mjOBJ_GEOM, "vial_body")
     fonts = _fonts()
     headline = _headline(args.csv)
     near = _camera([0.34, -0.10, 0.62], 0.55, azimuth=110, elevation=-10)
@@ -325,6 +394,8 @@ def main():
     rf, rt, rl = _capture(env, contacts, rfsm, renderer, near, lambda f: "")
     recovery = _beat(rf, rt, rl, fonts, "SlipZero  —  tactile closed loop", lambda lb, t: "Friction-cone margin triggers grip recovery", _recovery_stamps(rt, rfsm.metrics().recovery_latency_ms), int(7.0 * FPS))
 
+    vision = _vision_beat(env, controller, contacts, renderer, vial_geom, fonts, p1, config["vision"])
+
     env.reset()
     ff, ft, fl = _capture(env, contacts, Phase3FSM(env, controller, contacts, p1, p3), renderer, wide, _phase3_label)
     fulltask = _beat(ff, ft, fl, fonts, "Full task", lambda lb, t: lb or "Grasp - uncap - transfer - seal", [None] * len(ff), int(10.0 * FPS))
@@ -333,7 +404,7 @@ def main():
     of, ot, ol = _capture(env, contacts, Phase4FSM(env, controller, contacts, p1, p4), renderer, near, lambda f: "")
     reorient = _beat(of, ot, ol, fonts, "In-hand reorientation", lambda lb, t: f"In-hand rotation about the vial axis:  {t['yaw']:.0f} deg", [None] * len(of), int(5.5 * FPS))
 
-    segments = [_title_card(fonts), coldopen, recovery, fulltask, reorient,
+    segments = [_title_card(fonts), coldopen, recovery, vision, fulltask, reorient,
                 _audit_card(fonts, headline), _terminal_card(fonts, headline), _closing_card(fonts)]
     frames = _decorate(_crossfade(segments, XFADE), fonts)
 

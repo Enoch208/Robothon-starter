@@ -39,6 +39,13 @@ VIAL_BODY = "vial"
 GRASP_SITE = "grasp_site"
 _GRASP_SITE_LOCAL = (0.012, 0.030, -0.020)
 
+WORKSPACE_CAM = "workspace_cam"
+EYE_IN_HAND_CAM = "eye_in_hand"
+_WORKSPACE_CAM_POS = (0.34, -0.46, 0.82)
+_WORKSPACE_CAM_FOVY = 38.0
+_EYE_IN_HAND_POS = (0.0, 0.065, 0.0)
+_EYE_IN_HAND_FOVY = 40.0
+
 
 def _build_spec(arm_torque: bool) -> mujoco.MjSpec:
     scene = mujoco.MjSpec.from_file(str(_BENCH_XML))
@@ -77,6 +84,20 @@ def _build_spec(arm_torque: bool) -> mujoco.MjSpec:
         ft.type = kind
         ft.objtype = mujoco.mjtObj.mjOBJ_SITE
         ft.objname = WRIST_SITE
+
+    workspace_cam = scene.worldbody.add_camera()
+    workspace_cam.name = WORKSPACE_CAM
+    workspace_cam.pos = list(_WORKSPACE_CAM_POS)
+    workspace_cam.fovy = _WORKSPACE_CAM_FOVY
+    workspace_cam.mode = mujoco.mjtCamLight.mjCAMLIGHT_TARGETBODY
+    workspace_cam.targetbody = VIAL_BODY
+
+    eye_in_hand = scene.body("leap_palm").add_camera()
+    eye_in_hand.name = EYE_IN_HAND_CAM
+    eye_in_hand.pos = list(_EYE_IN_HAND_POS)
+    eye_in_hand.fovy = _EYE_IN_HAND_FOVY
+    eye_in_hand.mode = mujoco.mjtCamLight.mjCAMLIGHT_TARGETBODY
+    eye_in_hand.targetbody = VIAL_BODY
 
     return scene
 

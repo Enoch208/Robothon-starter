@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 import numpy as np
+import yaml
 
 from slipzero.env import SlipZeroEnv, TOUCH_SENSORS
+from slipzero.vision import VisionSensor
 
 PROBE_TARGET = 1.3
 SETTLE_STEPS = 120
@@ -64,10 +67,19 @@ def run_headless():
     fingers_in_contact = int(np.sum(peak_touch > CONTACT_NEWTONS))
     wrist_force = np.linalg.norm(env.sensor("wrist_force"))
 
+    vcfg = yaml.safe_load(Path("config/default.yaml").read_text())["vision"]
+    vision = VisionSensor(env, vcfg["width"], vcfg["height"],
+                          vcfg["visible_area_min"], vcfg["confidence_area_ref"])
+    workspace = vision.read_workspace()
+    eye_in_hand = vision.read_eye_in_hand()
+    cameras_seeing = int(workspace.vial_visible) + int(eye_in_hand.vial_visible)
+
     print(f"peak touch per finger [N]: {np.array2string(peak_touch, precision=2)}")
     print(f"fingers that registered contact: {fingers_in_contact}/{len(TOUCH_SENSORS)}  |  wrist |F|={wrist_force:.2f} N")
-    ok = fingers_in_contact >= 1 and wrist_force > 0.0
-    print("PHASE 0:", "PASS — model loads and touch/force/pose sensors respond to contact" if ok else "FAIL")
+    print(f"vision: workspace area={workspace.area_fraction:.3f} ({'visible' if workspace.vial_visible else 'absent'})  "
+          f"eye-in-hand area={eye_in_hand.area_fraction:.3f} ({'visible' if eye_in_hand.vial_visible else 'absent'})")
+    ok = fingers_in_contact >= 1 and wrist_force > 0.0 and cameras_seeing >= 1
+    print("PHASE 0:", "PASS — touch, wrist force/torque, and dual-camera vision all register the vial" if ok else "FAIL")
     return 0 if ok else 1
 
 

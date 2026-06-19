@@ -14,6 +14,14 @@ thresholds:
   reorient_tol_deg: 8.0
   uncap_angle_deg: 320.0
 
+vision:
+  width: 480
+  height: 360
+  visible_area_min: 0.004
+  confidence_area_ref: 0.02
+  slip_area_drop: 0.5
+  monitor_every_steps: 50
+
 controller:
   arm_kp_pos: [600.0, 600.0, 600.0]
   arm_kp_rot: [60.0, 60.0, 60.0]

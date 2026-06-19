@@ -4,12 +4,13 @@
 
 **Auditable, tactile-closed-loop dexterous handling of "never-drop" hazardous sample vials in MuJoCo.**
 
-Franka Emika Panda (7 DOF) · LEAP Hand (16 DOF) · MuJoCo 3.x
+Franka Emika Panda (7 DOF) · LEAP Hand (16 DOF) · RGB-D + segmentation vision · MuJoCo 3.x
 
 A five-finger hand grasps a sealed sample vial, **recovers from incipient slip** under perturbation,
 **unscrews the cap**, **reorients the vial in-hand**, and **transfers it to a waste port** — every state
-transition driven by a **sensor reading, never a wall-clock timer** — and a seeded N-trial evaluation
-**proves** the robustness with numbers any judge can reproduce in one command.
+transition driven by a **sensor reading, never a wall-clock timer**, with grasp integrity **cross-checked
+by a fused tactile + dual-camera vision channel** — and a seeded N-trial evaluation **proves** the
+robustness with numbers any judge can reproduce in one command.
 
 <br/>
 
@@ -23,10 +24,12 @@ transition driven by a **sensor reading, never a wall-clock timer** — and a se
 
 https://github.com/user-attachments/assets/a790a97a-027d-4470-8eb9-7aaf580d58a7
 
-*(≈40 s, also included as [`demo.mp4`](demo.mp4).)* The video is **produced by running the submitted
+*(≈43 s, also included as [`demo.mp4`](demo.mp4).)* The video is **produced by running the submitted
 code** (`python render_demo.py`): cold-open baseline drop → tactile slip recovery (margin trace →
-"RECOVERED 2 ms") → grasp/uncap/transfer/seal → in-hand reorientation → an audited-robustness card
-whose numbers are read straight from `metrics.csv`, so the on-screen figures match `eval.py` exactly.
+"RECOVERED 2 ms") → a **multimodal-perception beat** (eye-in-hand + workspace segmentation with a fused
+tactile+vision grasp-confirmation panel) → grasp/uncap/transfer/seal → in-hand reorientation → an
+audited-robustness card whose numbers are read straight from `metrics.csv`, so the on-screen figures
+match `eval.py` exactly.
 
 ---
 
@@ -114,8 +117,34 @@ validated as its own deterministic, sensor-gated FSM (`slipzero/fsm.py`).
   it stays below threshold for *k* consecutive steps (rejects contact-force noise).
 - **Recovery** — on incipient slip, grip force is escalated to restore the margin; recovery latency
   is logged. A fixed-grip baseline (no recovery) provides the contrast row.
+- **Vision–tactile fusion** — an eye-in-hand and a workspace camera render RGB, depth, and a real
+  **MuJoCo geom-segmentation** mask; the vial mask yields visibility, image-space centroid, depth, and
+  a grasp confidence. A `GraspMonitor` cross-checks the tactile force-closure signal against vision and
+  surfaces an independent loss-of-view cue — the two are **complementary** (touch sees incipient
+  micro-slip; vision sees gross displacement the contact margin goes blind to). Monitor-only: it never
+  re-gates the control, so the audited success rate is unaffected.
 - **MuJoCo depth** — `cone="elliptic"`, `condim=6` (torsional/rolling friction), `implicitfast`
-  integrator, hinge-coupled cap, `xfrc_applied` perturbations, four sensor types.
+  integrator, hinge-coupled cap, `xfrc_applied` perturbations, four contact/force/pose sensor types,
+  and **two cameras with RGB + depth + segmentation rendering**.
+
+---
+
+## 👁 Vision–tactile fusion
+
+Two MuJoCo cameras watch the grasp; the vial's **geom-segmentation mask** (highlighted) is decomposed
+into visibility, area, centroid, and depth, then fused with the friction-cone tactile signal by
+`GraspMonitor`. `python vision_check.py` regenerates these overlays and prints the fused verdict.
+
+| Eye-in-hand | Workspace |
+|---|---|
+| <img src="vision_eye_in_hand.png" width="380"/> | <img src="vision_workspace.png" width="380"/> |
+
+The channels are **complementary, not redundant**: the contact margin detects *incipient* micro-slip
+before motion, while vision detects *gross* displacement — including the loss-of-contact case where the
+margin goes blind. `vision_check.py` demonstrates this directly: during a stable hold the two **agree**,
+and on release the **vision channel catches the vial leaving view** even as the tactile reading drops
+out. The monitor is observability only — it never re-gates the controller, so the audited 88 % is
+unaffected (and honestly reported).
 
 ---
 
@@ -123,11 +152,12 @@ validated as its own deterministic, sensor-gated FSM (`slipzero/fsm.py`).
 
 | Phase | Capability | Sensor gate |
 |---|---|---|
-| 0 | Composed Panda+LEAP rig, instrumented | sensors report on contact |
+| 0 | Composed Panda+LEAP rig, instrumented | touch + wrist F/T + **dual-camera vision** report on contact |
 | 1 | Impedance grasp → lift → 5 s upright hold | per-finger force closure |
 | 2 | Slip detection + grip-escalation recovery | friction-cone margin |
 | 3 | Contact-driven uncap → transfer → seal | cap angle · vial-in-port · contamination |
 | 4 | In-hand reorientation (~46°, wrist fixed) | vial yaw vs target |
+| V | Tactile + vision grasp-integrity fusion (monitor) | force-closure ∧ vial-in-view + loss-of-view cue |
 | 5 | Seeded audit + open-loop baseline + repro test | deterministic metrics |
 
 ---
@@ -137,13 +167,13 @@ validated as its own deterministic, sensor-gated FSM (`slipzero/fsm.py`).
 | Criterion | Evidence in this submission | Verify |
 |---|---|---|
 | **Reproducibility** | Deterministic — same seed → identical numbers. One command per phase; `eval.py` reproduces the headline table; pinned `requirements.txt`; no hardcoded paths; runs from a fresh clone; repro test. | `python eval.py --trials 50 --seed 0` · `pytest tests/test_repro.py` |
-| **MuJoCo depth** | `MjSpec` composition (LEAP palm welded to the Panda flange); **four sensor types** (fingertip `touch`, wrist `force`/`torque`, vial `framepos`/`framequat`, `cap_thread` jointpos) **plus `mj_contactForce`**; friction-cone margin from real contact forces; `cone="elliptic"`, `condim=6`, `implicitfast`; hinge-coupled threaded cap; `xfrc_applied` perturbations; arm torque control via `qfrc_applied`. | `slipzero/env.py` · `slipzero/sensors.py` · `assets/slipzero_bench.xml` |
+| **MuJoCo depth** | `MjSpec` composition (LEAP palm welded to the Panda flange); **four sensor types** (fingertip `touch`, wrist `force`/`torque`, vial `framepos`/`framequat`, `cap_thread` jointpos) **plus `mj_contactForce`**; **two cameras (eye-in-hand + workspace) with RGB, depth, and geom-segmentation rendering**; friction-cone margin from real contact forces; `cone="elliptic"`, `condim=6`, `implicitfast`; hinge-coupled threaded cap; `xfrc_applied` perturbations; arm torque control via `qfrc_applied`. | `slipzero/env.py` · `slipzero/sensors.py` · `slipzero/vision.py` · `assets/slipzero_bench.xml` |
 | **Task design** | A clear, hard, real-world "never-drop hazardous sample" workflow — 6 sensor-gated stages with explicit fail conditions (drop, contamination-mat contact, crush) — that stays non-trivial under domain randomization. | pipeline diagram above · `slipzero/fsm.py` |
 | **Control** | Cartesian **impedance** control (site Jacobian + gravity/Coriolis comp + nullspace damping, ≈1 mm tracking); event-driven **sensor-gated** FSMs; incipient-slip detection + grip-escalation recovery; open-loop baseline for contrast. | `slipzero/control.py` · `slipzero/fsm.py` |
-| **Dexterity** | 16-DOF dexterous hand; multi-finger **force-closure** grasp; **contact-driven cap unscrew**; **in-hand reorientation** of the vial about its axis with the wrist held fixed. | `phase1.py` · `phase3.py` · `phase4.py` |
+| **Dexterity** | 16-DOF dexterous hand; multi-finger **force-closure** grasp; **contact-driven cap unscrew**; **in-hand reorientation** of the vial about its axis with the wrist held fixed; grasp integrity **cross-checked by a fused tactile + vision channel**. | `phase1.py` · `phase3.py` · `phase4.py` · `vision_check.py` |
 | **Engineering quality** | Clean modular package (`env` / `control` / `sensors` / `fsm`); every tunable in `config/default.yaml`; pinned deps; Menagerie attribution + MIT license; deterministic; automated tests. | repo layout above · `config/default.yaml` |
-| **Presentation** | ≈40 s HD video **produced by the code**, with live telemetry overlays, event stamps, and audit + reproduce cards — every on-screen number sourced from `metrics.csv`. | `render_demo.py` · `demo.mp4` |
-| **Innovation** | **Auditable robustness** (every headline number reproduced by one command) + a **tactile closed loop that closes on genuine contact forces** (not a scripted timeline) + in-hand reorient, shown with a measured baseline-beating contrast. | `eval.py` · the audit card in the video |
+| **Presentation** | ≈43 s HD video **produced by the code**, with live telemetry overlays, event stamps, a **multimodal-perception beat** (live segmentation + fused grasp panel), and audit + reproduce cards — every on-screen number sourced from `metrics.csv` or live sensors. | `render_demo.py` · `demo.mp4` |
+| **Innovation** | **Auditable robustness** (every headline number reproduced by one command) + a **tactile closed loop that closes on genuine contact forces** (not a scripted timeline) + **complementary tactile + vision grasp-integrity fusion** (touch catches micro-slip, vision catches gross loss-of-view) + in-hand reorient, shown with a measured baseline-beating contrast. | `eval.py` · `slipzero/fusion.py` · the audit + perception beats in the video |
 
 Guiding principle: **every claim has a matching command and a matching pixel** — the README numbers, the
 terminal output of `eval.py`, and the video overlays are the same numbers.
@@ -164,6 +194,7 @@ python phase1.py              # grasp → lift → hold
 python phase2.py              # slip detection + recovery (baseline vs closed loop)
 python phase3.py              # uncap → transfer → seal
 python phase4.py              # in-hand reorient
+python vision_check.py        # tactile + dual-camera vision fusion (saves segmentation overlays)
 python eval.py --trials 50 --seed 0   # seeded audit → metrics.csv + evaluation_report.json
 pytest tests/test_repro.py    # asserts the eval is deterministic
 
@@ -181,17 +212,19 @@ Every check prints a `PHASE n: PASS/FAIL` line. The demo video's audit card read
 ```
 submissions/slipzero/
 ├── slipzero/
-│   ├── env.py        # MjSpec composition, sensors, randomization, perturbation
+│   ├── env.py        # MjSpec composition, sensors, cameras, randomization, perturbation
 │   ├── control.py    # Cartesian impedance arm controller
 │   ├── sensors.py    # mj_contactForce decomposition, force closure, slip detector
+│   ├── vision.py     # RGB/depth/segmentation render → vial visibility, centroid, depth
+│   ├── fusion.py     # GraspMonitor: tactile + vision grasp-integrity cross-check
 │   └── fsm.py        # Phase 1–4 sensor-gated state machines
 ├── assets/           # vendored Panda + LEAP (Menagerie) + slipzero_bench.xml
-├── config/default.yaml   # all tunables (gains, thresholds, randomization)
-├── demo.py phase1.py phase2.py phase3.py phase4.py   # per-phase checks
+├── config/default.yaml   # all tunables (gains, thresholds, randomization, vision)
+├── demo.py phase1.py phase2.py phase3.py phase4.py vision_check.py   # per-phase checks
 ├── eval.py           # seeded N-trial audit → metrics.csv
 ├── render_demo.py    # telemetry-driven demo video
 ├── tests/test_repro.py
-├── demo.mp4
+├── demo.mp4  vision_eye_in_hand.png  vision_workspace.png
 └── registration.json
 ```
 
@@ -211,8 +244,11 @@ submissions/slipzero/
 
 ## 🚀 Future improvements
 
-- A margin-proportional, non-ejecting **adaptive grip** to widen the reliable envelope toward the
-  full randomization range and push success past 95 % while keeping the closed-loop advantage.
+- An **enveloping / under-support grasp pose** for the slipperiest vials. We measured that the residual
+  drops are low-friction *grasp-establishment* failures, and that simply escalating grip force backfires
+  (over-gripping ejects a smooth cylinder) — so the real lever is grasp *geometry*, not grip *force*.
+- A **vision-gated regrasp**: promote the loss-of-view cue from monitor to trigger so the FSM re-grasps
+  on a detected slip-out rather than only logging it.
 - Continuously **feedback-corrected** in-hand reorient gait.
 - `mjx`-parallel evaluation to push the trial count into the hundreds.
 
