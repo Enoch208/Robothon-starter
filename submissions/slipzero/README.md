@@ -71,4 +71,11 @@ Each check prints a `PHASE n: PASS/FAIL` line and writes a render to `results/`.
 - Phase 2's slip recovery is demonstrated at a deterministic operating point; robustness across a
   full domain-randomization sweep is future work.
 
+## Future improvements
+- Finish in-hand cap unscrewing (uncap) and add in-hand reorientation for full dexterity coverage.
+- N-trial seeded domain-randomization evaluation (`eval.py` → `metrics.csv` + plot) with an open-loop
+  baseline row and a `test_repro` assertion, for an auditable headline success/drop rate.
+- Telemetry-driven demo video whose on-screen numbers are generated from the metrics CSV.
+- Robustness of slip recovery across the full randomization sweep (vs. a single operating point).
+
 _Demo video: to be added (`demo.mp4` / link)._
