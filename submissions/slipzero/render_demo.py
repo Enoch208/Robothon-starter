@@ -17,7 +17,7 @@ from slipzero.sensors import ContactReader
 
 _FONT = "/System/Library/Fonts/Supplemental/Arial.ttf"
 _BOLD = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
-WIDTH, HEIGHT, FPS, STRIDE = 1280, 720, 30, 20
+WIDTH, HEIGHT, FPS, STRIDE = 1280, 720, 30, 16
 SLIP_THRESHOLD = 0.4
 XFADE = 9
 
@@ -185,7 +185,7 @@ def _title_card(fonts):
         draw.text((90, 250), "SlipZero", font=fonts["title"], fill=(*WHITE, a))
         draw.text((92, 332), "Auditable, tactile closed-loop dexterous vial handling", font=fonts["h1"], fill=(*GREEN, a))
         draw.text((92, 404), "Franka Panda  +  LEAP Hand (16 DOF)  ·  MuJoCo", font=fonts["label"], fill=(*DIM, a))
-    return _blank(fonts, body, int(2.6 * FPS))
+    return _blank(fonts, body, int(4.0 * FPS))
 
 
 def _audit_card(fonts, headline):
@@ -201,7 +201,7 @@ def _audit_card(fonts, headline):
             draw.text((1090, y - 4), f"{pct * p:.0f}%", font=fonts["h1"], fill=color)
         draw.text((92, 466), f"{headline['drops']} drops  ·  recovery halves the baseline's drops  ·  deterministic", font=fonts["label"], fill=DIM)
         draw.text((92, 512), "reproduced by:  python eval.py --trials 50 --seed 0", font=fonts["small"], fill=GREEN)
-    return _blank(fonts, body, int(3.8 * FPS))
+    return _blank(fonts, body, int(7.5 * FPS))
 
 
 def _terminal_card(fonts, headline):
@@ -213,7 +213,7 @@ def _terminal_card(fonts, headline):
         ("recovery latency: mean 4 ms  median 2 ms", WHITE),
         ("", WHITE), ("$ pytest tests/test_repro.py", GREEN), ("2 passed", WHITE),
     ]
-    n = int(5.0 * FPS)
+    n = int(8.5 * FPS)
 
     def body(draw, p):
         draw.rounded_rectangle([80, 80, WIDTH - 80, HEIGHT - 80], radius=16, fill=(6, 9, 14))
@@ -229,7 +229,7 @@ def _closing_card(fonts):
         draw.text((90, 250), "Grasp · recover · uncap · reorient · transfer · seal", font=fonts["h1"], fill=(*WHITE, a))
         draw.text((92, 322), "Every transition sensor-gated.  Every number reproducible.", font=fonts["label"], fill=(*GREEN, a))
         draw.text((92, 392), "SlipZero  ·  MuJoCo  ·  Panda + LEAP Hand", font=fonts["label"], fill=(*DIM, a))
-    return _blank(fonts, body, int(2.8 * FPS))
+    return _blank(fonts, body, int(4.5 * FPS))
 
 
 def _crossfade(segments, n):
@@ -324,7 +324,7 @@ def _vision_beat(env, controller, contacts, renderer, vial_geom, fonts, p1, vcfg
         grasp.step()
     f_min = p1["f_grasp_min"]
     frames = []
-    for _ in range(int(3.0 * FPS)):
+    for _ in range(int(6.0 * FPS)):
         env.data.ctrl[env._hand_ctrl] = grasp.close_hand
         env.step(12)
         eih = _render_cam(renderer, env, EYE_IN_HAND_CAM, vial_geom)
@@ -387,22 +387,22 @@ def main():
 
     env.reset()
     bf, bt, bl = _capture(env, contacts, Phase2FSM(env, controller, contacts, p1, p2, recovery_enabled=False), renderer, near, lambda f: "")
-    coldopen = _beat(bf, bt, bl, fonts, "Cold open  —  fixed-grip baseline", lambda lb, t: "A perturbation hits  ·  no slip recovery", _drop_stamps(bt), int(5.5 * FPS))
+    coldopen = _beat(bf, bt, bl, fonts, "Cold open  —  fixed-grip baseline", lambda lb, t: "A perturbation hits  ·  no slip recovery", _drop_stamps(bt), int(9.0 * FPS))
 
     env.reset()
     rfsm = Phase2FSM(env, controller, contacts, p1, p2, recovery_enabled=True)
     rf, rt, rl = _capture(env, contacts, rfsm, renderer, near, lambda f: "")
-    recovery = _beat(rf, rt, rl, fonts, "SlipZero  —  tactile closed loop", lambda lb, t: "Friction-cone margin triggers grip recovery", _recovery_stamps(rt, rfsm.metrics().recovery_latency_ms), int(7.0 * FPS))
+    recovery = _beat(rf, rt, rl, fonts, "SlipZero  —  tactile closed loop", lambda lb, t: "Friction-cone margin triggers grip recovery", _recovery_stamps(rt, rfsm.metrics().recovery_latency_ms), int(16.0 * FPS))
 
     vision = _vision_beat(env, controller, contacts, renderer, vial_geom, fonts, p1, config["vision"])
 
     env.reset()
     ff, ft, fl = _capture(env, contacts, Phase3FSM(env, controller, contacts, p1, p3), renderer, wide, _phase3_label)
-    fulltask = _beat(ff, ft, fl, fonts, "Full task", lambda lb, t: lb or "Grasp - uncap - transfer - seal", [None] * len(ff), int(10.0 * FPS))
+    fulltask = _beat(ff, ft, fl, fonts, "Full task", lambda lb, t: lb or "Grasp - uncap - transfer - seal", [None] * len(ff), int(26.0 * FPS))
 
     env.reset()
     of, ot, ol = _capture(env, contacts, Phase4FSM(env, controller, contacts, p1, p4), renderer, near, lambda f: "")
-    reorient = _beat(of, ot, ol, fonts, "In-hand reorientation", lambda lb, t: f"In-hand rotation about the vial axis:  {t['yaw']:.0f} deg", [None] * len(of), int(5.5 * FPS))
+    reorient = _beat(of, ot, ol, fonts, "In-hand reorientation", lambda lb, t: f"In-hand rotation about the vial axis:  {t['yaw']:.0f} deg", [None] * len(of), int(12.0 * FPS))
 
     segments = [_title_card(fonts), coldopen, recovery, vision, fulltask, reorient,
                 _audit_card(fonts, headline), _terminal_card(fonts, headline), _closing_card(fonts)]

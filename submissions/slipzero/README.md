@@ -24,7 +24,7 @@ robustness with numbers any judge can reproduce in one command.
 
 https://github.com/user-attachments/assets/ad71eb00-42c8-4a98-b5b1-1699e26a05ab
 
-*(≈43 s, also included as [`demo.mp4`](demo.mp4).)* The video is **produced by running the submitted
+*(≈88 s, also included as [`demo.mp4`](demo.mp4).)* The video is **produced by running the submitted
 code** (`python render_demo.py`): cold-open baseline drop → tactile slip recovery (margin trace →
 "RECOVERED 2 ms") → a **multimodal-perception beat** (eye-in-hand + workspace segmentation with a fused
 tactile+vision grasp-confirmation panel) → grasp/uncap/transfer/seal → in-hand reorientation → an
@@ -172,7 +172,7 @@ unaffected (and honestly reported).
 | **Control** | Cartesian **impedance** control (site Jacobian + gravity/Coriolis comp + nullspace damping, ≈1 mm tracking); event-driven **sensor-gated** FSMs; incipient-slip detection + grip-escalation recovery; open-loop baseline for contrast. | `slipzero/control.py` · `slipzero/fsm.py` |
 | **Dexterity** | 16-DOF dexterous hand; multi-finger **force-closure** grasp; **contact-driven cap unscrew**; **in-hand reorientation** of the vial about its axis with the wrist held fixed; grasp integrity **cross-checked by a fused tactile + vision channel**. | `phase1.py` · `phase3.py` · `phase4.py` · `vision_check.py` |
 | **Engineering quality** | Clean modular package (`env` / `control` / `sensors` / `fsm`); every tunable in `config/default.yaml`; pinned deps; Menagerie attribution + MIT license; deterministic; automated tests. | repo layout above · `config/default.yaml` |
-| **Presentation** | ≈43 s HD video **produced by the code**, with live telemetry overlays, event stamps, a **multimodal-perception beat** (live segmentation + fused grasp panel), and audit + reproduce cards — every on-screen number sourced from `metrics.csv` or live sensors. | `render_demo.py` · `demo.mp4` |
+| **Presentation** | ≈88 s HD video **produced by the code**, with live telemetry overlays, event stamps, a **multimodal-perception beat** (live segmentation + fused grasp panel), and audit + reproduce cards — every on-screen number sourced from `metrics.csv` or live sensors. | `render_demo.py` · `demo.mp4` |
 | **Innovation** | **Auditable robustness** (every headline number reproduced by one command) + a **tactile closed loop that closes on genuine contact forces** (not a scripted timeline) + **complementary tactile + vision grasp-integrity fusion** (touch catches micro-slip, vision catches gross loss-of-view) + in-hand reorient, shown with a measured baseline-beating contrast. | `eval.py` · `slipzero/fusion.py` · the audit + perception beats in the video |
 
 Guiding principle: **every claim has a matching command and a matching pixel** — the README numbers, the
