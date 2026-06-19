@@ -22,7 +22,7 @@ robustness with numbers any judge can reproduce in one command.
 
 ## 🎥 Demo
 
-https://github.com/user-attachments/assets/a790a97a-027d-4470-8eb9-7aaf580d58a7
+https://github.com/user-attachments/assets/ad71eb00-42c8-4a98-b5b1-1699e26a05ab
 
 *(≈43 s, also included as [`demo.mp4`](demo.mp4).)* The video is **produced by running the submitted
 code** (`python render_demo.py`): cold-open baseline drop → tactile slip recovery (margin trace →
