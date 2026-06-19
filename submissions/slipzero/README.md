@@ -11,6 +11,12 @@ incipient slip, and transfers it to a waste-disposal port — with every state t
 - **Hand:** LEAP Hand (16 DOF), dexterous five-finger
 - Composed at load time from MuJoCo Menagerie assets (see `assets/ATTRIBUTION.md`).
 
+We evaluated the FFAI starter platforms (Aegis quadruped, Futurist and FF Master humanoids) and
+chose a dedicated 16-DOF dexterous hand instead: this task is fine in-hand manipulation — grasping a
+24 mm vial, recovering from slip, and unscrewing a cap — which needs articulated fingers and a
+friction-cone tactile signal that the FFAI locomotion platforms (wrist + fist, no fingers) do not
+provide.
+
 ## Task goal
 Robustly handle a hazardous sample vial without ever dropping or contaminating it: approach → grasp →
 lift → hold under perturbation (detect and recover from slip) → transfer to a waste port → seal — and
