@@ -1,0 +1,68 @@
+<mujoco model="slipzero_bench">
+  <option timestep="0.002" cone="elliptic" integrator="implicitfast" impratio="10"/>
+
+  <statistic center="0.4 0 0.4" extent="1.1"/>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="130" elevation="-22" offwidth="1280" offheight="720"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="floor_tex" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4"
+             rgb2="0.1 0.15 0.2" markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <material name="floor_mat" texture="floor_tex" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+    <material name="bench_mat" rgba="0.55 0.57 0.6 1"/>
+    <material name="vial_mat" rgba="0.25 0.55 0.9 0.55"/>
+    <material name="cap_mat" rgba="0.9 0.78 0.12 1"/>
+    <material name="port_mat" rgba="0.15 0.6 0.35 1"/>
+  </asset>
+
+  <worldbody>
+    <light name="key" pos="0.6 0.2 1.6" dir="-0.3 -0.1 -1" directional="true"/>
+
+    <geom name="floor" type="plane" size="0 0 0.05" material="floor_mat"/>
+
+    <body name="bench" pos="0.5 0 0.2">
+      <geom name="bench_top" type="box" size="0.35 0.35 0.2" material="bench_mat"/>
+    </body>
+
+    <geom name="contam_mat" type="box" pos="0.5 0 0.402" size="0.3 0.3 0.002" rgba="0.8 0.12 0.12 0.35"/>
+
+    <body name="rack" pos="0.34 -0.14 0.522">
+      <geom name="rack_base" type="box" pos="0 0 -0.052" size="0.022 0.022 0.040" material="bench_mat"/>
+      <geom name="rack_px" type="box" pos="0.028 0 0" size="0.004 0.030 0.006" material="bench_mat"/>
+      <geom name="rack_nx" type="box" pos="-0.028 0 0" size="0.004 0.030 0.006" material="bench_mat"/>
+      <geom name="rack_py" type="box" pos="0 0.028 0" size="0.030 0.004 0.006" material="bench_mat"/>
+      <geom name="rack_ny" type="box" pos="0 -0.028 0" size="0.030 0.004 0.006" material="bench_mat"/>
+    </body>
+
+    <body name="waste_port" pos="0.55 0.15 0.42">
+      <geom name="port_floor" type="box" pos="0 0 0" size="0.055 0.055 0.004" material="port_mat"/>
+      <geom name="port_px" type="box" pos="0.055 0 0.03" size="0.004 0.055 0.03" material="port_mat"/>
+      <geom name="port_nx" type="box" pos="-0.055 0 0.03" size="0.004 0.055 0.03" material="port_mat"/>
+      <geom name="port_py" type="box" pos="0 0.055 0.03" size="0.055 0.004 0.03" material="port_mat"/>
+      <geom name="port_ny" type="box" pos="0 -0.055 0.03" size="0.055 0.004 0.03" material="port_mat"/>
+      <site name="port_center" pos="0 0 0.03" size="0.005" group="4"/>
+    </body>
+
+    <body name="vial" pos="0.34 -0.14 0.55">
+      <freejoint name="vial_free"/>
+      <geom name="vial_body" type="cylinder" size="0.012 0.04" friction="1.0 0.01 0.0001"
+            condim="6" mass="0.05" material="vial_mat"/>
+      <body name="cap" pos="0 0 0.045">
+        <joint name="cap_thread" type="hinge" axis="0 0 1" stiffness="0" damping="0.002" frictionloss="0.01"/>
+        <geom name="cap_geom" type="cylinder" size="0.013 0.008" mass="0.005" material="cap_mat"/>
+      </body>
+    </body>
+
+    <site name="robot_mount" pos="0 0 0" size="0.01" group="4"/>
+  </worldbody>
+
+  <sensor>
+    <framepos name="vial_pos" objtype="body" objname="vial"/>
+    <framequat name="vial_quat" objtype="body" objname="vial"/>
+  </sensor>
+</mujoco>

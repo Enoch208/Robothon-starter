@@ -1,0 +1,95 @@
+seed: 0
+trials: 50
+
+thresholds:
+  f_grasp_min: 0.5
+  f_crush_max: 8.0
+  margin_threshold: 0.05
+  regrasp_grace_ms: 200
+  reorient_tol_deg: 8.0
+  uncap_angle_deg: 320.0
+
+controller:
+  arm_kp_pos: [600.0, 600.0, 600.0]
+  arm_kp_rot: [60.0, 60.0, 60.0]
+  arm_kd_pos: [49.0, 49.0, 49.0]
+  arm_kd_rot: [10.0, 10.0, 10.0]
+  arm_joint_damping: 5.0
+  grip_force_base: 1.0
+  grip_force_escalate: 3.0
+
+grasp:
+  pregrasp_height: 0.10
+  enclose_depth: 0.0
+  lift_height: 0.18
+  finger_open: 0.0
+  finger_close: 1.2
+
+phase1:
+  pick_pos: [0.39, -0.11, 0.62]
+  lift_height: 0.15
+  min_lift: 0.11
+  max_tilt_deg: 25.0
+  min_fingers: 3
+  ee_tolerance: 0.005
+  lift_ee_tolerance: 0.03
+  hand_open: 0.0
+  hand_close: [0.8, 0.0, 0.95, 0.95, 0.8, 0.0, 0.95, 0.95, 0.8, 0.0, 0.95, 0.95, 1.0, 0.4, 0.9, 0.8]
+  approach_ready_steps: 2000
+  approach_max_steps: 3500
+  hand_close_steps: 900
+  grasp_ready_steps: 1400
+  grasp_max_steps: 1800
+  lift_ready_steps: 1600
+  lift_max_steps: 2500
+  hold_steps: 2500
+  render_path: results/phase1_hold.png
+  render:
+    distance: 0.32
+    azimuth: 110
+    elevation: -10
+    width: 900
+    height: 720
+
+phase2:
+  impulse_force: [0.0, 0.0, -5.5]
+  impulse_start_steps: 500
+  impulse_steps: 50
+  total_steps: 3500
+  margin_threshold: 0.4
+  debounce_steps: 5
+  filter_alpha: 0.25
+  base_hand_scale: 0.88
+  recovery_hand: [0.88, 0.0, 1.045, 1.045, 0.88, 0.0, 1.045, 1.045, 0.88, 0.0, 1.045, 1.045, 1.1, 0.44, 0.99, 0.88]
+  recovery_target_offset: [0.0, 0.0, 0.0]
+  drop_lift: 0.08
+  max_tilt_deg: 25.0
+  min_fingers: 3
+  baseline_render_path: results/phase2_baseline_drop.png
+  render_path: results/phase2_recovery.png
+  render:
+    distance: 0.35
+    azimuth: 110
+    elevation: -10
+    width: 900
+    height: 720
+
+phase3:
+  transfer_height: 0.18
+  lower_height: 0.055
+  retract_height: 0.22
+  port_xy_tol: 0.05
+  sealed_z_margin: 0.08
+  release_hand: 0.0
+  transfer_ready_steps: 1500
+  transfer_max_steps: 3200
+  lower_steps: 1500
+  release_steps: 500
+  retract_steps: 1600
+  render_path: results/phase3_sealed.png
+  render:
+    distance: 0.6
+    azimuth: 120
+    elevation: -18
+    width: 900
+    height: 720

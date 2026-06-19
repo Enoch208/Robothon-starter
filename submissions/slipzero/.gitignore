@@ -1,0 +1,34 @@
+# Internal / strategy docs — working references, not shipped artifacts
+SlipZero_PRD.md
+*_PRD.md
+
+# AI/assistant working files — scratch, plans, transcripts, agent output
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+*.scratch
+*.notes.md
+docs/superpowers/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# MuJoCo / sim artifacts
+MUJOCO_LOG.TXT
+*.mp4
+*.gif
+results/*.csv
+results/*.png
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
