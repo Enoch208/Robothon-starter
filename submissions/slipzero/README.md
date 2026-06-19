@@ -17,17 +17,12 @@ transition driven by a **sensor reading, never a wall-clock timer** — and a se
 
 ## 🎥 Demo
 
-<!--
-  Upload demo.mp4 (in this folder) as a GitHub attachment (drag it into the PR description or an
-  issue comment), then paste the resulting https://github.com/user-attachments/... URL on its own
-  line below. GitHub embeds an mp4 URL inline automatically.
--->
+https://github.com/user-attachments/assets/be3cb2df-9a5e-497f-a0cc-73b79e446c77
 
-> **▶ Video:** _paste the GitHub attachment URL of `demo.mp4` here_ — the same file is included in this folder (`demo.mp4`).
-
-The ≈40-second video is **produced by running the submitted code** (`python render_demo.py`): cold-open
-baseline drop → tactile slip recovery → grasp/uncap/transfer/seal → in-hand reorientation → an
-audited-robustness card whose numbers are read straight from `metrics.csv`.
+*(≈40 s, also included as [`demo.mp4`](demo.mp4).)* The video is **produced by running the submitted
+code** (`python render_demo.py`): cold-open baseline drop → tactile slip recovery (margin trace →
+"RECOVERED 2 ms") → grasp/uncap/transfer/seal → in-hand reorientation → an audited-robustness card
+whose numbers are read straight from `metrics.csv`, so the on-screen figures match `eval.py` exactly.
 
 ---
 
@@ -55,13 +50,13 @@ audited-robustness card whose numbers are read straight from `metrics.csv`.
 flowchart LR
   M["MuJoCo model<br/>Panda + LEAP + vial/cap + bench"]
   S["Sensors<br/>fingertip touch · wrist force/torque<br/>vial pose · mj_contactForce"]
-  D["Slip detector<br/>friction-cone margin<br/>μ·fₙ − ‖fₜ‖"]
+  D["Slip detector<br/>friction-cone margin<br/>mu*fn - |ft|"]
   F["Sensor-gated FSM"]
   C["Control<br/>Cartesian impedance arm<br/>+ finger grip / escalation"]
   M --> S --> D --> F
   S --> F
   F --> C --> M
-  C -. qfrc_applied / position targets .-> M
+  C -. "qfrc_applied + position targets" .-> M
 ```
 
 The loop closes on **genuine MuJoCo contact forces** (`mj_contactForce`), not a scripted timeline.
@@ -74,15 +69,15 @@ is imminent.
 stateDiagram-v2
   [*] --> APPROACH
   APPROACH --> GRASP: EE at pre-grasp pose
-  GRASP --> HOLD: force closure (≥3 fingers)
-  HOLD --> RECOVER: friction margin < threshold
-  RECOVER --> HOLD: margin restored (grip escalated)
+  GRASP --> HOLD: force closure (3+ fingers)
+  HOLD --> RECOVER: margin below threshold
+  RECOVER --> HOLD: margin restored
   HOLD --> UNCAP: stable hold
-  UNCAP --> REORIENT: cap rotated past uncap angle
-  REORIENT --> TRANSFER: in-hand yaw ≥ target
-  TRANSFER --> SEAL: vial over the waste port
-  SEAL --> [*]: vial in port · EE retracted
-  HOLD --> FAILED: drop / contamination / crush
+  UNCAP --> REORIENT: cap past uncap angle
+  REORIENT --> TRANSFER: in-hand yaw at target
+  TRANSFER --> SEAL: vial over waste port
+  SEAL --> [*]: vial in port, EE retracted
+  HOLD --> FAILED: drop, contamination, crush
 ```
 
 Timeouts exist only as **failure guards** — never as success triggers. Each phase is implemented and
@@ -132,6 +127,22 @@ validated as its own deterministic, sensor-gated FSM (`slipzero/fsm.py`).
 | 5 | Seeded audit + open-loop baseline + repro test | deterministic metrics |
 
 ---
+
+## 🎯 How SlipZero addresses each evaluation criterion
+
+| Criterion | Evidence in this submission | Verify |
+|---|---|---|
+| **Reproducibility** | Deterministic — same seed → identical numbers. One command per phase; `eval.py` reproduces the headline table; pinned `requirements.txt`; no hardcoded paths; runs from a fresh clone; repro test. | `python eval.py --trials 20 --seed 0` · `pytest tests/test_repro.py` |
+| **MuJoCo depth** | `MjSpec` composition (LEAP palm welded to the Panda flange); **four sensor types** (fingertip `touch`, wrist `force`/`torque`, vial `framepos`/`framequat`, `cap_thread` jointpos) **plus `mj_contactForce`**; friction-cone margin from real contact forces; `cone="elliptic"`, `condim=6`, `implicitfast`; hinge-coupled threaded cap; `xfrc_applied` perturbations; arm torque control via `qfrc_applied`. | `slipzero/env.py` · `slipzero/sensors.py` · `assets/slipzero_bench.xml` |
+| **Task design** | A clear, hard, real-world "never-drop hazardous sample" workflow — 6 sensor-gated stages with explicit fail conditions (drop, contamination-mat contact, crush) — that stays non-trivial under domain randomization. | pipeline diagram above · `slipzero/fsm.py` |
+| **Control** | Cartesian **impedance** control (site Jacobian + gravity/Coriolis comp + nullspace damping, ≈1 mm tracking); event-driven **sensor-gated** FSMs; incipient-slip detection + grip-escalation recovery; open-loop baseline for contrast. | `slipzero/control.py` · `slipzero/fsm.py` |
+| **Dexterity** | 16-DOF dexterous hand; multi-finger **force-closure** grasp; **contact-driven cap unscrew**; **in-hand reorientation** of the vial about its axis with the wrist held fixed. | `phase1.py` · `phase3.py` · `phase4.py` |
+| **Engineering quality** | Clean modular package (`env` / `control` / `sensors` / `fsm`); every tunable in `config/default.yaml`; pinned deps; Menagerie attribution + MIT license; deterministic; automated tests. | repo layout above · `config/default.yaml` |
+| **Presentation** | ≈40 s HD video **produced by the code**, with live telemetry overlays, event stamps, and audit + reproduce cards — every on-screen number sourced from `metrics.csv`. | `render_demo.py` · `demo.mp4` |
+| **Innovation** | **Auditable robustness** (every headline number reproduced by one command) + a **tactile closed loop that closes on genuine contact forces** (not a scripted timeline) + in-hand reorient, shown with a measured baseline-beating contrast. | `eval.py` · the audit card in the video |
+
+Guiding principle: **every claim has a matching command and a matching pixel** — the README numbers, the
+terminal output of `eval.py`, and the video overlays are the same numbers.
 
 ## ▶ Reproduce it (one command each)
 
