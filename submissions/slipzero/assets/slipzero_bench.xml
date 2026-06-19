@@ -50,6 +50,10 @@
     </body>
 
     <body name="decapper" pos="0.25 0.03 0.707">
+      <geom name="decapper_post" type="box" pos="0 0.024 -0.154" size="0.012 0.012 0.154"
+            contype="0" conaffinity="0" group="2" material="decapper_mat"/>
+      <geom name="decapper_arm" type="box" pos="0 0.012 0" size="0.01 0.012 0.012"
+            contype="0" conaffinity="0" group="2" material="decapper_mat"/>
       <geom name="decapper_left" type="box" pos="-0.015 0 0" size="0.0025 0.018 0.010"
             friction="2.0 0.02 0.001" condim="6" material="decapper_mat"/>
       <geom name="decapper_right" type="box" pos="0.015 0 0" size="0.0025 0.018 0.010"
