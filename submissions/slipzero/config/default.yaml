@@ -1,6 +1,11 @@
 seed: 0
 trials: 50
 
+randomization:
+  friction: [0.6, 1.2]
+  mass: [0.03, 0.08]
+  impulse_newtons: [3.0, 6.0]
+
 thresholds:
   f_grasp_min: 0.5
   f_crush_max: 8.0
@@ -75,21 +80,51 @@ phase2:
     height: 720
 
 phase3:
+  uncap_angle_deg: 30.0
+  uncap_hand: [0.8, 0.0, 0.95, 0.95, 0.8, 0.0, 0.95, 0.95, 0.8, 0.0, 0.95, 0.95, 1.0, 0.4, 0.9, 0.8]
+  transfer_hand: [0.8, 0.0, 0.95, 0.95, 0.8, 0.0, 0.95, 0.95, 0.8, 0.0, 0.95, 0.95, 1.0, 0.4, 0.9, 0.8]
+  uncap_align_tol: 0.012
+  uncap_align_ready_steps: 1600
+  uncap_align_max_steps: 2200
+  uncap_sweep_offset: [0.04, 0.04, 0.0]
+  uncap_sweep_steps: 1200
+  uncap_min_sweep_steps: 1000
+  uncap_sweep_max_steps: 1800
+  drop_lift: 0.02
   transfer_height: 0.18
+  transfer_xy_bias: [0.18, -0.10]
   lower_height: 0.055
   retract_height: 0.22
   port_xy_tol: 0.05
   sealed_z_margin: 0.08
   release_hand: 0.0
   transfer_ready_steps: 1500
-  transfer_max_steps: 3200
+  transfer_max_steps: 5000
   lower_steps: 1500
   release_steps: 500
   retract_steps: 1600
+  uncap_render_path: results/phase3_uncap.png
   render_path: results/phase3_sealed.png
   render:
     distance: 0.6
     azimuth: 120
     elevation: -18
+    width: 900
+    height: 720
+
+phase4:
+  target_yaw_deg: 45.0
+  max_tilt_deg: 25.0
+  min_fingers: 3
+  ramp_steps: 2500
+  hold_steps: 900
+  arm_kp_rot: [160.0, 160.0, 160.0]
+  arm_kd_rot: [22.0, 22.0, 22.0]
+  reorient_delta: [0.1404, 0.0756, 0.0, 0.0, 0.3888, -0.2376, 0.0, 0.0, 0.4212, 0.7992, 0.0, 0.0, 0.1944, 0.4536, 0.2052, 0.2268]
+  render_path: results/phase4_reorient.png
+  render:
+    distance: 0.34
+    azimuth: 110
+    elevation: -10
     width: 900
     height: 720

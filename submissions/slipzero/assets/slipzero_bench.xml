@@ -18,6 +18,7 @@
     <material name="vial_mat" rgba="0.25 0.55 0.9 0.55"/>
     <material name="cap_mat" rgba="0.9 0.78 0.12 1"/>
     <material name="port_mat" rgba="0.15 0.6 0.35 1"/>
+    <material name="decapper_mat" rgba="0.12 0.12 0.14 1"/>
   </asset>
 
   <worldbody>
@@ -48,12 +49,22 @@
       <site name="port_center" pos="0 0 0.03" size="0.005" group="4"/>
     </body>
 
+    <body name="decapper" pos="0.25 0.03 0.707">
+      <geom name="decapper_left" type="box" pos="-0.015 0 0" size="0.0025 0.018 0.010"
+            friction="2.0 0.02 0.001" condim="6" material="decapper_mat"/>
+      <geom name="decapper_right" type="box" pos="0.015 0 0" size="0.0025 0.018 0.010"
+            friction="2.0 0.02 0.001" condim="6" material="decapper_mat"/>
+      <geom name="decapper_back" type="box" pos="0 0.015 0" size="0.018 0.0025 0.010"
+            friction="2.0 0.02 0.001" condim="6" material="decapper_mat"/>
+      <site name="decapper_center" pos="0 -0.014 0.006" size="0.004" group="4"/>
+    </body>
+
     <body name="vial" pos="0.34 -0.14 0.55">
       <freejoint name="vial_free"/>
       <geom name="vial_body" type="cylinder" size="0.012 0.04" friction="1.0 0.01 0.0001"
             condim="6" mass="0.05" material="vial_mat"/>
       <body name="cap" pos="0 0 0.045">
-        <joint name="cap_thread" type="hinge" axis="0 0 1" stiffness="0" damping="0.002" frictionloss="0.01"/>
+        <joint name="cap_thread" type="hinge" axis="0 0 -1" stiffness="0" damping="0.002" frictionloss="0.01"/>
         <geom name="cap_geom" type="cylinder" size="0.013 0.008" mass="0.005" material="cap_mat"/>
       </body>
     </body>
@@ -64,5 +75,6 @@
   <sensor>
     <framepos name="vial_pos" objtype="body" objname="vial"/>
     <framequat name="vial_quat" objtype="body" objname="vial"/>
+    <jointpos name="cap_thread_pos" joint="cap_thread"/>
   </sensor>
 </mujoco>

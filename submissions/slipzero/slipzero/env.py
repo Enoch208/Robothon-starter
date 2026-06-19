@@ -156,3 +156,16 @@ class SlipZeroEnv:
 
     def clear_vial_force(self):
         self.data.xfrc_applied[self._vial_body, :] = 0.0
+
+    def set_vial_params(self, friction, mass):
+        vial_geom = _name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "vial_body")
+        self.model.geom_friction[vial_geom, 0] = friction
+        self.model.body_mass[self._vial_body] = mass
+
+    def randomize(self, rng, friction_range=(0.6, 1.2), mass_range=(0.03, 0.08)):
+        params = {
+            "vial_friction": float(rng.uniform(*friction_range)),
+            "vial_mass": float(rng.uniform(*mass_range)),
+        }
+        self.set_vial_params(params["vial_friction"], params["vial_mass"])
+        return params

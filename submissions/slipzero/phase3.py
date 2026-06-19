@@ -26,7 +26,10 @@ def run(config_path, render=True):
     result = fsm.run()
     if render:
         save_png(phase3["render_path"], env, phase3["render"])
-    return result, phase3["render_path"] if render else None
+        if fsm.restore_uncap_snapshot():
+            save_png(phase3["uncap_render_path"], env, phase3["render"])
+    render_paths = (phase3["uncap_render_path"], phase3["render_path"]) if render else None
+    return result, render_paths
 
 
 def main():
@@ -38,11 +41,16 @@ def main():
     result, render_path = run(args.config, render=not args.no_render)
     metrics = result.metrics
     print(f"final state: {result.state} ({result.reason})")
+    print(
+        f"uncapped: {metrics.uncapped}  cap angle: {metrics.cap_angle_deg:.1f} deg "
+        f"delta: {metrics.cap_delta_deg:.1f} deg  target: {metrics.uncap_angle_deg:.1f} deg"
+    )
     print(f"vial in port: {metrics.vial_in_port}  port distance: {metrics.port_distance:.3f} m")
-    print(f"ee retracted: {metrics.ee_retracted}  contaminated: {metrics.contaminated}")
+    print(f"ee retracted: {metrics.ee_retracted}  drops: {metrics.drops}  contaminated: {metrics.contaminated}")
     print(f"final vial pos: {metrics.final_vial_pos}")
     if render_path is not None:
-        print(f"render: {render_path}")
+        print(f"uncap render: {render_path[0]}")
+        print(f"seal render: {render_path[1]}")
     print("PHASE 3:", "PASS — vial transferred and sealed in the waste port" if result.passed else "FAIL")
     return 0 if result.passed else 1
 
