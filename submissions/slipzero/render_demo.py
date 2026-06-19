@@ -285,8 +285,9 @@ def _phase3_label(fsm):
 def _encode(frames, out_path):
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
-           "-s", f"{WIDTH}x{HEIGHT}", "-r", str(FPS), "-i", "-", "-c:v", "libx264",
-           "-pix_fmt", "yuv420p", "-crf", "20", str(out_path)]
+           "-s", f"{WIDTH}x{HEIGHT}", "-r", str(FPS), "-i", "-",
+           "-vf", "scale=1920:1080:flags=lanczos", "-c:v", "libx264",
+           "-pix_fmt", "yuv420p", "-crf", "18", str(out_path)]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     for frame in frames:
         proc.stdin.write(np.ascontiguousarray(frame[:, :, :3]).tobytes())
