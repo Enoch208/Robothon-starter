@@ -15,4 +15,5 @@ echo "== Phase 4: in-hand reorient =="       ; python phase4.py --no-render
 echo "== Vision: tactile + dual-camera fusion ="; python vision_check.py
 echo "== Phase 5: seeded audit =="           ; python eval.py --trials 50 --seed 0
 echo "== Repro test =="                      ; pytest tests/test_repro.py -q
+echo "== Submission validator =="            ; python validate_submission.py
 echo "== All checks passed. Render the demo with: python render_demo.py =="

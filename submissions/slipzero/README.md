@@ -166,7 +166,7 @@ unaffected (and honestly reported).
 
 | Criterion | Evidence in this submission | Verify |
 |---|---|---|
-| **Reproducibility** | Deterministic — same seed → identical numbers. One command per phase; `eval.py` reproduces the headline table; pinned `requirements.txt`; no hardcoded paths; runs from a fresh clone; repro test. | `python eval.py --trials 50 --seed 0` · `pytest tests/test_repro.py` |
+| **Reproducibility** | Deterministic — same seed → identical numbers. One command per phase; `eval.py` reproduces the headline table; pinned `requirements.txt`; no hardcoded paths; runs from a fresh clone; repro test; **a `validate_submission.py` that self-checks the submission's own invariants** (UUID, files, determinism, audit-report consistency). | `python eval.py --trials 50 --seed 0` · `pytest tests/test_repro.py` · `python validate_submission.py` |
 | **MuJoCo depth** | `MjSpec` composition (LEAP palm welded to the Panda flange); **four sensor types** (fingertip `touch`, wrist `force`/`torque`, vial `framepos`/`framequat`, `cap_thread` jointpos) **plus `mj_contactForce`**; **two cameras (eye-in-hand + workspace) with RGB, depth, and geom-segmentation rendering**; friction-cone margin from real contact forces; `cone="elliptic"`, `condim=6`, `implicitfast`; hinge-coupled threaded cap; `xfrc_applied` perturbations; arm torque control via `qfrc_applied`. | `slipzero/env.py` · `slipzero/sensors.py` · `slipzero/vision.py` · `assets/slipzero_bench.xml` |
 | **Task design** | A clear, hard, real-world "never-drop hazardous sample" workflow — 6 sensor-gated stages with explicit fail conditions (drop, contamination-mat contact, crush) — that stays non-trivial under domain randomization. | pipeline diagram above · `slipzero/fsm.py` |
 | **Control** | Cartesian **impedance** control (site Jacobian + gravity/Coriolis comp + nullspace damping, ≈1 mm tracking); event-driven **sensor-gated** FSMs; incipient-slip detection + grip-escalation recovery; open-loop baseline for contrast. | `slipzero/control.py` · `slipzero/fsm.py` |
@@ -197,6 +197,7 @@ python phase4.py              # in-hand reorient
 python vision_check.py        # tactile + dual-camera vision fusion (saves segmentation overlays)
 python eval.py --trials 50 --seed 0   # seeded audit → metrics.csv + evaluation_report.json
 pytest tests/test_repro.py    # asserts the eval is deterministic
+python validate_submission.py # self-validates the contract (UUID, files, pinned deps, determinism, audit consistency)
 
 mjpython demo.py              # interactive viewer (macOS); python demo.py elsewhere
 python render_demo.py         # regenerate demo.mp4 (needs the ffmpeg binary on PATH)
@@ -224,6 +225,7 @@ submissions/slipzero/
 ├── eval.py           # seeded N-trial audit → metrics.csv
 ├── render_demo.py    # telemetry-driven demo video
 ├── tests/test_repro.py
+├── validate_submission.py    # self-checks the submission's invariants
 ├── demo.mp4  vision_eye_in_hand.png  vision_workspace.png
 └── registration.json
 ```
