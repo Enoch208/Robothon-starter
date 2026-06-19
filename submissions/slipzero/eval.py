@@ -101,7 +101,7 @@ def write_csv(rows, path):
 
 def main():
     parser = argparse.ArgumentParser(description="SlipZero seeded slip-recovery evaluation")
-    parser.add_argument("--trials", type=int, default=20)
+    parser.add_argument("--trials", type=int, default=50)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--config", default="config/default.yaml")
     parser.add_argument("--csv", default="results/metrics.csv")

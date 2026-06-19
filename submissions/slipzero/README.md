@@ -32,19 +32,19 @@ whose numbers are read straight from `metrics.csv`, so the on-screen figures mat
 
 ## 📊 Headline results
 
-`python eval.py --trials 20 --seed 0` — full domain-randomization range (friction, mass, impulse), deterministic:
+`python eval.py --trials 50 --seed 0` — full domain-randomization range (friction, mass, impulse), deterministic:
 
 | Metric | SlipZero (closed loop) | Open-loop baseline |
 |---|---|---|
-| Success (no drop) | **90 %** | 80 % |
-| Drops | **2 / 20** | 4 / 20 |
+| Success (no drop) | **88 %** | 68 % |
+| Drops | **6 / 50** | 16 / 50 |
 | Mean slip-recovery latency | **≈ 4 ms** | — |
 | In-hand reorientation | **46°** about the vial axis (wrist fixed) | — |
 | Determinism | same seed → identical numbers | same |
 
-> The closed loop **halves the baseline's drops**. We report **90 % over the full randomization
-> range** honestly rather than narrowing the ranges to manufacture a higher number — auditability is
-> the point.
+> The closed loop **cuts the baseline's drops from 16 to 6** (a 20-point success gain) over 50 seeded
+> trials. We report **88 % over the full randomization range** honestly rather than narrowing the
+> ranges to manufacture a higher number — auditability is the point.
 
 ---
 
@@ -136,7 +136,7 @@ validated as its own deterministic, sensor-gated FSM (`slipzero/fsm.py`).
 
 | Criterion | Evidence in this submission | Verify |
 |---|---|---|
-| **Reproducibility** | Deterministic — same seed → identical numbers. One command per phase; `eval.py` reproduces the headline table; pinned `requirements.txt`; no hardcoded paths; runs from a fresh clone; repro test. | `python eval.py --trials 20 --seed 0` · `pytest tests/test_repro.py` |
+| **Reproducibility** | Deterministic — same seed → identical numbers. One command per phase; `eval.py` reproduces the headline table; pinned `requirements.txt`; no hardcoded paths; runs from a fresh clone; repro test. | `python eval.py --trials 50 --seed 0` · `pytest tests/test_repro.py` |
 | **MuJoCo depth** | `MjSpec` composition (LEAP palm welded to the Panda flange); **four sensor types** (fingertip `touch`, wrist `force`/`torque`, vial `framepos`/`framequat`, `cap_thread` jointpos) **plus `mj_contactForce`**; friction-cone margin from real contact forces; `cone="elliptic"`, `condim=6`, `implicitfast`; hinge-coupled threaded cap; `xfrc_applied` perturbations; arm torque control via `qfrc_applied`. | `slipzero/env.py` · `slipzero/sensors.py` · `assets/slipzero_bench.xml` |
 | **Task design** | A clear, hard, real-world "never-drop hazardous sample" workflow — 6 sensor-gated stages with explicit fail conditions (drop, contamination-mat contact, crush) — that stays non-trivial under domain randomization. | pipeline diagram above · `slipzero/fsm.py` |
 | **Control** | Cartesian **impedance** control (site Jacobian + gravity/Coriolis comp + nullspace damping, ≈1 mm tracking); event-driven **sensor-gated** FSMs; incipient-slip detection + grip-escalation recovery; open-loop baseline for contrast. | `slipzero/control.py` · `slipzero/fsm.py` |
@@ -161,7 +161,7 @@ python phase1.py              # grasp → lift → hold
 python phase2.py              # slip detection + recovery (baseline vs closed loop)
 python phase3.py              # uncap → transfer → seal
 python phase4.py              # in-hand reorient
-python eval.py --trials 20 --seed 0   # seeded audit → results/metrics.csv + headline table
+python eval.py --trials 50 --seed 0   # seeded audit → results/metrics.csv + headline table
 pytest tests/test_repro.py    # asserts the eval is deterministic
 
 mjpython demo.py              # interactive viewer (macOS); python demo.py elsewhere
@@ -198,7 +198,7 @@ submissions/slipzero/
 
 - The pipeline is tuned around a nominal operating point. It is reliable across a **moderate
   friction/mass envelope** (the eval reports the reliable band) but not the entire randomization
-  range — hence **90 %**, reported honestly. Grip escalation helps for downward slide-out slips
+  range — hence **88 %**, reported honestly. Grip escalation helps for downward slide-out slips
   (where the closed loop beats the baseline); a fixed grip is near its physical ceiling for the
   slipperiest, lightest, hardest-hit cases.
 - The in-hand reorient gait is open-loop (a tuned finger trajectory) with a **sensor-verified**

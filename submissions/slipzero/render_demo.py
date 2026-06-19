@@ -200,14 +200,14 @@ def _audit_card(fonts, headline):
             _bar(draw, 470, y + 4, 600, 30, (pct / 100.0) * p, color)
             draw.text((1090, y - 4), f"{pct * p:.0f}%", font=fonts["h1"], fill=color)
         draw.text((92, 466), f"{headline['drops']} drops  ·  recovery halves the baseline's drops  ·  deterministic", font=fonts["label"], fill=DIM)
-        draw.text((92, 512), "reproduced by:  python eval.py --trials 20 --seed 0", font=fonts["small"], fill=GREEN)
+        draw.text((92, 512), "reproduced by:  python eval.py --trials 50 --seed 0", font=fonts["small"], fill=GREEN)
     return _blank(fonts, body, int(3.8 * FPS))
 
 
 def _terminal_card(fonts, headline):
     lines = [
-        ("$ python eval.py --trials 20 --seed 0", GREEN), ("", WHITE),
-        ("trials=20 seed=0  (friction/mass/impulse randomized)", WHITE),
+        ("$ python eval.py --trials 50 --seed 0", GREEN), ("", WHITE),
+        ("trials=50 seed=0  (friction/mass/impulse randomized)", WHITE),
         (f"SlipZero (closed loop):  success {headline['closed']:.0f}%  drops {headline['drops']}" if headline else "", WHITE),
         (f"Baseline (no recovery):  success {headline['base']:.0f}%" if headline else "", WHITE),
         ("recovery latency: mean 4 ms  median 2 ms", WHITE),
