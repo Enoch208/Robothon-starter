@@ -26,6 +26,7 @@ MUJOCO_LOG.TXT
 *.mp4
 *.gif
 results/*.csv
+results/*.json
 results/*.png
 
 # OS / editor

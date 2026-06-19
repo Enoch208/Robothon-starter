@@ -153,6 +153,9 @@ terminal output of `eval.py`, and the video overlays are the same numbers.
 Python 3.11. From this folder:
 
 ```bash
+./run.sh                      # one command: venv -> install -> all phases + audit + repro test
+
+# ...or step by step:
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
@@ -161,7 +164,7 @@ python phase1.py              # grasp → lift → hold
 python phase2.py              # slip detection + recovery (baseline vs closed loop)
 python phase3.py              # uncap → transfer → seal
 python phase4.py              # in-hand reorient
-python eval.py --trials 50 --seed 0   # seeded audit → results/metrics.csv + headline table
+python eval.py --trials 50 --seed 0   # seeded audit → metrics.csv + evaluation_report.json
 pytest tests/test_repro.py    # asserts the eval is deterministic
 
 mjpython demo.py              # interactive viewer (macOS); python demo.py elsewhere

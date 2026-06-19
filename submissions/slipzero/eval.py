@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import statistics
 from pathlib import Path
 
@@ -105,11 +106,14 @@ def main():
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--config", default="config/default.yaml")
     parser.add_argument("--csv", default="results/metrics.csv")
+    parser.add_argument("--report", default="results/evaluation_report.json")
     args = parser.parse_args()
 
     rows = run(args.trials, args.seed, args.config)
     write_csv(rows, args.csv)
     s = summarize(rows)
+    Path(args.report).write_text(json.dumps(
+        {"trials": args.trials, "seed": args.seed, **s, "per_trial": rows}, indent=2, default=float))
     print(f"trials={s['trials']} seed={args.seed}  (vial friction/mass/impulse randomized)")
     print(f"SlipZero (closed loop):  success {s['success_rate']:.0f}%  drops {s['drops']}")
     print(f"Baseline (no recovery):  success {s['baseline_success_rate']:.0f}%  drops {s['baseline_drops']}")
