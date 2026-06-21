@@ -6,6 +6,8 @@
 
 Franka Emika Panda (7 DOF) · LEAP Hand (16 DOF) · RGB-D + segmentation vision · MuJoCo 3.x
 
+**88% audited success vs 68% open-loop baseline · 50 seeded trials · ~4 ms slip recovery · 46° in-hand reorient · deterministic, reproducible in one command**
+
 A five-finger hand grasps a sealed sample vial, **recovers from incipient slip** under perturbation,
 **unscrews the cap**, **reorients the vial in-hand**, and **transfers it to a waste port** — every state
 transition driven by a **sensor reading, never a wall-clock timer**, with grasp integrity **cross-checked

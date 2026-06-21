@@ -115,13 +115,18 @@ def _bar(draw, x, y, w, h, fraction, color):
         draw.rounded_rectangle([x, y, x + fw, y + h], radius=4, fill=color)
 
 
-def _overlay(frame, fonts, title, subtitle, telem, stamp):
+def _overlay(frame, fonts, title, subtitle, telem, stamp, caption=None):
     image = Image.fromarray(np.ascontiguousarray(frame[:, :, :3])).convert("RGBA")
     draw = ImageDraw.Draw(image, "RGBA")
     draw.rectangle([0, 0, WIDTH, 90], fill=(8, 12, 20, 175))
     draw.rectangle([0, 90, WIDTH, 93], fill=(*GREEN, 220))
     draw.text((28, 12), title, font=fonts["banner"], fill=WHITE)
     draw.text((30, 52), subtitle, font=fonts["label"], fill=GREEN)
+    if caption:
+        cw = draw.textlength(caption, font=fonts["label"])
+        cx = (WIDTH - cw) / 2
+        draw.rounded_rectangle([cx - 20, 104, cx + cw + 20, 144], radius=10, fill=(8, 12, 20, 200))
+        draw.text((cx, 110), caption, font=fonts["label"], fill=WHITE)
     if telem is not None:
         px, py, pw = 28, HEIGHT - 152, 360
         draw.rounded_rectangle([px, py, px + pw, py + 122], radius=10, fill=(8, 12, 20, 170))
@@ -163,10 +168,10 @@ def _recovery_stamps(telems, latency_ms):
     return stamps
 
 
-def _beat(frames, telems, labels, fonts, title, subtitle_fn, stamps, target):
+def _beat(frames, telems, labels, fonts, title, subtitle_fn, stamps, target, caption=None):
     triples = _subsample(list(zip(frames, telems, labels)), target)
     stamps = _subsample(stamps, target)
-    return [_overlay(f, fonts, title, subtitle_fn(lb, t), t, s) for (f, t, lb), s in zip(triples, stamps)]
+    return [_overlay(f, fonts, title, subtitle_fn(lb, t), t, s, caption) for (f, t, lb), s in zip(triples, stamps)]
 
 
 def _blank(fonts, draw_body, n):
@@ -182,9 +187,11 @@ def _blank(fonts, draw_body, n):
 def _title_card(fonts):
     def body(draw, p):
         a = int(255 * p)
-        draw.text((90, 250), "SlipZero", font=fonts["title"], fill=(*WHITE, a))
-        draw.text((92, 332), "Auditable, tactile closed-loop dexterous vial handling", font=fonts["h1"], fill=(*GREEN, a))
-        draw.text((92, 404), "Franka Panda  +  LEAP Hand (16 DOF)  ·  MuJoCo", font=fonts["label"], fill=(*DIM, a))
+        draw.text((90, 210), "SlipZero", font=fonts["title"], fill=(*WHITE, a))
+        draw.text((92, 292), "Auditable, tactile closed-loop dexterous vial handling", font=fonts["h1"], fill=(*GREEN, a))
+        draw.text((92, 360), "Franka Panda  +  LEAP Hand (16 DOF)  ·  MuJoCo", font=fonts["label"], fill=(*DIM, a))
+        draw.text((92, 430), "88% audited success  vs  68% baseline   ·   50 seeded trials   ·   ~4 ms slip recovery", font=fonts["label"], fill=(*WHITE, a))
+        draw.text((92, 466), "friction-cone slip detection  ·  vision-tactile fusion  ·  reproducible in one command", font=fonts["label"], fill=(*GREEN, a))
     return _blank(fonts, body, int(4.0 * FPS))
 
 
@@ -387,22 +394,26 @@ def main():
 
     env.reset()
     bf, bt, bl = _capture(env, contacts, Phase2FSM(env, controller, contacts, p1, p2, recovery_enabled=False), renderer, near, lambda f: "")
-    coldopen = _beat(bf, bt, bl, fonts, "Cold open  —  fixed-grip baseline", lambda lb, t: "A perturbation hits  ·  no slip recovery", _drop_stamps(bt), int(9.0 * FPS))
+    coldopen = _beat(bf, bt, bl, fonts, "Cold open  —  fixed-grip baseline", lambda lb, t: "A perturbation hits  ·  no slip recovery", _drop_stamps(bt), int(9.0 * FPS),
+                     caption="Fixed grip, no feedback — the perturbation wins and the vial drops.")
 
     env.reset()
     rfsm = Phase2FSM(env, controller, contacts, p1, p2, recovery_enabled=True)
     rf, rt, rl = _capture(env, contacts, rfsm, renderer, near, lambda f: "")
-    recovery = _beat(rf, rt, rl, fonts, "SlipZero  —  tactile closed loop", lambda lb, t: "Friction-cone margin triggers grip recovery", _recovery_stamps(rt, rfsm.metrics().recovery_latency_ms), int(16.0 * FPS))
+    recovery = _beat(rf, rt, rl, fonts, "SlipZero  —  tactile closed loop", lambda lb, t: "Friction-cone margin triggers grip recovery", _recovery_stamps(rt, rfsm.metrics().recovery_latency_ms), int(16.0 * FPS),
+                     caption="Margin collapses below threshold — grip escalates and recovers the vial in ~4 ms.")
 
     vision = _vision_beat(env, controller, contacts, renderer, vial_geom, fonts, p1, config["vision"])
 
     env.reset()
     ff, ft, fl = _capture(env, contacts, Phase3FSM(env, controller, contacts, p1, p3), renderer, wide, _phase3_label)
-    fulltask = _beat(ff, ft, fl, fonts, "Full task", lambda lb, t: lb or "Grasp - uncap - transfer - seal", [None] * len(ff), int(26.0 * FPS))
+    fulltask = _beat(ff, ft, fl, fonts, "Full task", lambda lb, t: lb or "Grasp - uncap - transfer - seal", [None] * len(ff), int(26.0 * FPS),
+                     caption="One continuous closed loop: grasp, unscrew the cap, transfer, and seal at the waste port.")
 
     env.reset()
     of, ot, ol = _capture(env, contacts, Phase4FSM(env, controller, contacts, p1, p4), renderer, near, lambda f: "")
-    reorient = _beat(of, ot, ol, fonts, "In-hand reorientation", lambda lb, t: f"In-hand rotation about the vial axis:  {t['yaw']:.0f} deg", [None] * len(of), int(12.0 * FPS))
+    reorient = _beat(of, ot, ol, fonts, "In-hand reorientation", lambda lb, t: f"In-hand rotation about the vial axis:  {t['yaw']:.0f} deg", [None] * len(of), int(12.0 * FPS),
+                     caption="In-hand reorientation — 46 degrees about the vial axis, wrist held fixed.")
 
     segments = [_title_card(fonts), coldopen, recovery, vision, fulltask, reorient,
                 _audit_card(fonts, headline), _terminal_card(fonts, headline), _closing_card(fonts)]
